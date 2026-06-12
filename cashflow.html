@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cashflow</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<style>
+  :root{
+    --paper:#FBFBF9; --ink:#1B1D1C; --muted:#6B6E6A; --faint:#9A9D98;
+    --line:#E5E3DC; --line-strong:#C9C7BF; --band:#F2F0E9; --band-hover:#ECEAE1;
+    --income:#0F6E56; --outflow:#A32D2D; --accent:#19543F;
+    --row-hover:#F6F5F0; --col-hover:#F1F4F0; --total-bg:#EDF2EE;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);
+    font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
+  .wrap{padding:14px 16px 22px;}
+
+  /* ---------- toolbar ---------- */
+  .bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px;}
+  .bar h1{font-size:16px;font-weight:600;letter-spacing:.2px;margin:0 8px 0 0;}
+  .bar h1 span{color:var(--faint);font-weight:400;}
+  .ctl{display:flex;align-items:center;gap:6px;}
+  .ctl label{font-size:12px;color:var(--muted);}
+  select,button{
+    font:inherit;font-size:13px;color:var(--ink);background:#fff;
+    border:1px solid var(--line-strong);border-radius:8px;padding:6px 10px;cursor:pointer;
+  }
+  select:hover,button:hover{border-color:var(--faint);}
+  select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  button:active{transform:translateY(1px);}
+  .seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden;}
+  .seg button{border:0;border-radius:0;background:#fff;padding:6px 12px;}
+  .seg button+button{border-left:1px solid var(--line-strong);}
+  .seg button[aria-pressed="true"]{background:var(--accent);color:#fff;}
+  .spacer{flex:1}
+  .stamp{font-size:12px;color:var(--faint);}
+
+  /* ---------- table ---------- */
+  .scroller{overflow:auto;max-height:82vh;border:1px solid var(--line);border-radius:var(--radius);background:#fff;}
+  table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;
+    font-variant-numeric:tabular-nums;}
+  th,td{padding:7px 12px;white-space:nowrap;border-bottom:1px solid var(--line);}
+  thead th{
+    position:sticky;top:0;z-index:5;background:#fff;
+    font-size:11.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);
+    text-align:right;border-bottom:1.5px solid var(--line-strong);
+  }
+  thead th.lbl{text-align:left;}
+  th.year{cursor:pointer;user-select:none;color:var(--ink);}
+  th.year:hover{background:var(--band);}
+  th.year .chev{display:inline-block;margin-right:4px;color:var(--faint);transition:transform .15s;}
+  th.year.open .chev{transform:rotate(90deg);}
+  th.gtot{background:var(--total-bg);color:var(--accent);}
+
+  td{text-align:right;font-size:13.5px;}
+  td.lbl{text-align:left;}
+  td.num{color:var(--ink);}
+  td.neg{color:var(--outflow);}
+  td.pos{color:var(--income);}
+  td.zero{color:var(--faint);}
+  td.ytot{border-left:1px solid var(--line);font-weight:600;}
+  td.gtot{background:var(--total-bg);font-weight:600;border-left:1px solid var(--line-strong);}
+
+  /* sticky first column */
+  th:first-child,td:first-child{
+    position:sticky;left:0;z-index:3;background:#fff;
+    border-right:1px solid var(--line);max-width:280px;overflow:hidden;text-overflow:ellipsis;
+  }
+  thead th:first-child{z-index:6;}
+
+  /* category rows */
+  tr.cat td{background:var(--band);font-weight:600;cursor:pointer;user-select:none;}
+  tr.cat:hover td{background:var(--band-hover);}
+  tr.cat td:first-child{background:var(--band);}
+  tr.cat:hover td:first-child{background:var(--band-hover);}
+  tr.cat .chev{display:inline-block;width:14px;color:var(--muted);transition:transform .15s;}
+  tr.cat.open .chev{transform:rotate(90deg);}
+  tr.sub td:first-child{padding-left:34px;color:var(--muted);font-size:13px;background:#fff;}
+  tr.sub td{font-size:13px;}
+  tr.sub:hover td{background:var(--row-hover);}
+  tr.sub:hover td:first-child{background:var(--row-hover);}
+
+  /* grand total — the accountant's double rule */
+  tr.grand td{
+    font-weight:700;background:#fff;
+    border-top:2px solid var(--ink);border-bottom:6px double var(--ink);
+    position:sticky;bottom:0;z-index:4;
+  }
+  tr.grand td:first-child{z-index:5;}
+
+  td.colhl{background:var(--col-hover) !important;}
+
+  /* states */
+  .state{padding:60px 20px;text-align:center;color:var(--muted);}
+  .state .big{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+  .state code{background:var(--band);padding:2px 6px;border-radius:6px;font-size:12px;}
+  .pulse{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);
+    margin-right:8px;animation:pulse 1s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+  @media (prefers-reduced-motion:reduce){
+    .pulse{animation:none}
+    th.year .chev,tr.cat .chev{transition:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <h1>Cashflow <span>· pivot</span></h1>
+    <div class="ctl">
+      <label for="company">Cég</label>
+      <select id="company"><option value="0">Összes cég</option></select>
+    </div>
+    <div class="ctl">
+      <label>Bank</label>
+      <div class="seg" role="group" aria-label="Bank összegek">
+        <button id="modeGross" aria-pressed="true">Bruttó</button>
+        <button id="modeNet" aria-pressed="false">Nettó</button>
+      </div>
+    </div>
+    <button id="expandAll">Összes kibontása</button>
+    <button id="collapseAll">Összecsukás</button>
+    <span class="spacer"></span>
+    <button id="csv" title="Exportálás CSV-be">CSV</button>
+    <button id="refresh">Frissítés</button>
+    <span class="stamp" id="stamp"></span>
+  </div>
+  <div id="view" class="scroller">
+    <div class="state"><span class="pulse"></span>Adatok betöltése…</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ================= CONFIG =================
+   Subcategories whose data comes EXCLUSIVELY from Timesheets.
+   Matching rows in Bank_Transactions / Expenses are skipped
+   to prevent double counting. Edit here if needed.            */
+const PAYROLL_TAX_SUBCATS = ["SZJA", "SZOCHO", "TBJ"];
+const PAYROLL_PARENT_CAT  = "Közvetlen Munkaerő";
+const REVENUE_CAT         = "Bevétel";
+const UNCAT               = "Nem kategorizált";
+/* ========================================== */
+
+const HUF = new Intl.NumberFormat('hu-HU', {maximumFractionDigits: 0});
+const MONTHS_HU = ["jan","feb","márc","ápr","máj","jún","júl","aug","szep","okt","nov","dec"];
+
+let DB = null;            // normalized raw rows per table
+let state = {
+  company: 0,             // 0 = all
+  bankNet: false,         // false = Bruttó (Amount), true = Nettó (Net_Amount)
+  openCats: new Set(),    // category ids expanded
+  openYears: new Set(),   // years expanded into months
+};
+
+/* ---------- Grist plumbing ---------- */
+function rowsOf(t){
+  const keys = Object.keys(t).filter(k => Array.isArray(t[k]));
+  const n = t.id ? t.id.length : 0;
+  const out = new Array(n);
+  for(let i=0;i<n;i++){ const r={}; for(const k of keys) r[k]=t[k][i]; out[i]=r; }
+  return out;
+}
+function ymOf(epoch){
+  if(!epoch) return null;
+  const d = new Date(epoch*1000);
+  return d.getUTCFullYear()*100 + (d.getUTCMonth()+1);   // e.g. 202604
+}
+
+async function loadAll(){
+  const names = ["Timesheets","Bank_Transactions","Expenses","Categories","SubCategories","Companies"];
+  const tabs = await Promise.all(names.map(n => grist.docApi.fetchTable(n)));
+  DB = {};
+  names.forEach((n,i) => DB[n] = rowsOf(tabs[i]));
+}
+
+/* ---------- aggregation ---------- */
+function aggregate(){
+  const catName = new Map(DB.Categories.map(c => [c.id, c.Name || ("#"+c.id)]));
+  const sub = new Map(DB.SubCategories.map(s => [s.id, {name: s.Name || ("#"+s.id), parent: s.Parent_Category||0}]));
+
+  // resolve special ids by NAME — no magic numbers
+  const subIdByName = {};
+  for(const s of DB.SubCategories){
+    if(PAYROLL_TAX_SUBCATS.includes(s.Name)) subIdByName[s.Name] = s.id;
+  }
+  const payrollParentId = (DB.Categories.find(c => c.Name === PAYROLL_PARENT_CAT)||{}).id || -1;
+  const taxParentId = subIdByName["SZJA"] ? sub.get(subIdByName["SZJA"]).parent : -1;
+
+  const excludedSubIds = new Set();
+  for(const s of DB.SubCategories){
+    if(PAYROLL_TAX_SUBCATS.includes(s.Name) || s.Parent_Category === payrollParentId)
+      excludedSubIds.add(s.id);
+  }
+
+  // agg[catId] = {name, subs: Map(subId -> Map(ym -> val))}
+  const agg = new Map();
+  const add = (catId, subId, ym, val) => {
+    if(!ym || !val) return;
+    if(!catId){ catId = -1; }
+    if(!agg.has(catId)) agg.set(catId, {name: catId===-1 ? UNCAT : (catName.get(catId)||UNCAT), subs:new Map()});
+    const c = agg.get(catId);
+    if(!c.subs.has(subId)) c.subs.set(subId, new Map());
+    const m = c.subs.get(subId);
+    m.set(ym, (m.get(ym)||0) + val);
+  };
+  const subCat = id => sub.has(id) ? sub.get(id).parent : 0;
+
+  const co = state.company;
+
+  /* 1 — Timesheets: all payroll, signed negative (outflow) */
+  for(const r of DB.Timesheets){
+    if(co && r.Company !== co) continue;
+    const ym = ymOf(r.Date); if(!ym) continue;
+    if(r.Sub_Category) add(subCat(r.Sub_Category), r.Sub_Category, ym, -(r.Allocated_Wage_Cost||0));
+    if(subIdByName["TBJ"])    add(taxParentId, subIdByName["TBJ"],    ym, -(r.Allocated_TBJ||0));
+    if(subIdByName["SZJA"])   add(taxParentId, subIdByName["SZJA"],   ym, -(r.Allocated_SZJA||0));
+    if(subIdByName["SZOCHO"]) add(taxParentId, subIdByName["SZOCHO"], ym, -(r.Allocated_Szocho||0));
+  }
+
+  /* 2 — Bank_Transactions: everything except payroll subcats */
+  for(const r of DB.Bank_Transactions){
+    if(co && r.Company !== co) continue;
+    if(r.Sub_Category && excludedSubIds.has(r.Sub_Category)) continue;
+    const ym = ymOf(r.Date); if(!ym) continue;
+    const val = state.bankNet ? (r.Net_Amount||0) : (r.Amount||0);
+    add(r.Category || subCat(r.Sub_Category), r.Sub_Category||0, ym, val);
+  }
+
+  /* 3 — Expenses: cash costs, negative; except payroll subcats */
+  for(const r of DB.Expenses){
+    if(co && r.Company !== co) continue;
+    if(r.Sub_Category && excludedSubIds.has(r.Sub_Category)) continue;
+    const ym = ymOf(r.Date); if(!ym) continue;
+    add(r.Main_Category || subCat(r.Sub_Category), r.Sub_Category||0, ym, -(r.Amount||0));
+  }
+
+  return {agg, sub};
+}
+
+/* ---------- rendering ---------- */
+function render(){
+  const {agg, sub} = aggregate();
+  const view = document.getElementById("view");
+
+  // collect all year-months present
+  const ymSet = new Set();
+  for(const c of agg.values()) for(const m of c.subs.values()) for(const ym of m.keys()) ymSet.add(ym);
+  if(!ymSet.size){
+    view.innerHTML = `<div class="state"><div class="big">Nincs megjeleníthető adat</div>
+      Ellenőrizd a cégszűrőt, vagy hogy a táblákban van-e dátumozott rekord.</div>`;
+    return;
+  }
+  const allYM = [...ymSet].sort((a,b)=>a-b);
+  const years = [...new Set(allYM.map(ym=>Math.floor(ym/100)))].sort((a,b)=>a-b);
+  if(!state._initYears){ state.openYears.add(years[years.length-1]); state._initYears = true; }
+
+  // columns: per year → months (if open) + year total; then grand total
+  const cols = [];
+  for(const y of years){
+    if(state.openYears.has(y)){
+      const months = allYM.filter(ym=>Math.floor(ym/100)===y);
+      for(const ym of months) cols.push({type:"m", ym, y});
+    }
+    cols.push({type:"y", y});
+  }
+  cols.push({type:"g"});
+
+  // sort categories: Bevétel first, Nem kategorizált last, rest hu-alphabetical
+  const cats = [...agg.entries()].sort((a,b)=>{
+    const an=a[1].name, bn=b[1].name;
+    if(an===REVENUE_CAT) return -1; if(bn===REVENUE_CAT) return 1;
+    if(an===UNCAT) return 1; if(bn===UNCAT) return -1;
+    return an.localeCompare(bn,'hu');
+  });
+
+  const sumRow = (cells) => {
+    const perYM = cells; // Map ym->val
+    const yT = {}; let g=0;
+    for(const [ym,v] of perYM){ const y=Math.floor(ym/100); yT[y]=(yT[y]||0)+v; g+=v; }
+    return {perYM, yT, g};
+  };
+  const catTotals = new Map();
+  for(const [cid,c] of cats){
+    const merged = new Map();
+    for(const m of c.subs.values()) for(const [ym,v] of m) merged.set(ym,(merged.get(ym)||0)+v);
+    catTotals.set(cid, sumRow(merged));
+  }
+  // grand
+  const grandM = new Map();
+  for(const t of catTotals.values()) for(const [ym,v] of t.perYM) grandM.set(ym,(grandM.get(ym)||0)+v);
+  const grand = sumRow(grandM);
+
+  const fmt = v => {
+    if(!v || Math.abs(v) < 0.5) return `<td class="zero" data-c="$C">–</td>`;
+    const cls = v<0 ? "neg" : "pos";
+    return `<td class="num ${cls}" data-c="$C">${HUF.format(Math.round(v))}</td>`;
+  };
+  const cellsFor = t => cols.map((c,i)=>{
+    let v=0, extra="";
+    if(c.type==="m") v = t.perYM.get(c.ym)||0;
+    else if(c.type==="y"){ v = t.yT[c.y]||0; extra=" ytot"; }
+    else { v = t.g; extra=" gtot"; }
+    let html = fmt(v).replace("$C", i);
+    if(extra) html = html.replace('class="', `class="${extra.trim()} `);
+    return html;
+  }).join("");
+
+  let thead = `<tr><th class="lbl">Kategória</th>`;
+  thead += cols.map((c,i)=>{
+    if(c.type==="m") return `<th data-c="${i}">${MONTHS_HU[(c.ym%100)-1]}</th>`;
+    if(c.type==="y") return `<th class="year ${state.openYears.has(c.y)?"open":""}" data-year="${c.y}" data-c="${i}" title="Kattints a hónapok mutatásához"><span class="chev">▸</span>${c.y}</th>`;
+    return `<th class="gtot" data-c="${i}">Összesen</th>`;
+  }).join("") + `</tr>`;
+
+  let body = "";
+  for(const [cid,c] of cats){
+    const open = state.openCats.has(cid);
+    body += `<tr class="cat ${open?"open":""}" data-cat="${cid}">
+      <td class="lbl"><span class="chev">▸</span>${esc(c.name)}</td>${cellsFor(catTotals.get(cid))}</tr>`;
+    if(open){
+      const subs = [...c.subs.entries()]
+        .map(([sid,m])=>({sid, name: sid? (sub.get(sid)||{}).name||UNCAT : UNCAT, t:sumRow(m)}))
+        .filter(s => Math.abs(s.t.g) >= 0.5)
+        .sort((a,b)=>a.name.localeCompare(b.name,'hu'));
+      for(const s of subs)
+        body += `<tr class="sub"><td class="lbl">${esc(s.name)}</td>${cellsFor(s.t)}</tr>`;
+    }
+  }
+  body += `<tr class="grand"><td class="lbl">Nettó cashflow</td>${cellsFor(grand)}</tr>`;
+
+  view.innerHTML = `<table>${thead}${body}</table>`;
+  wireTable(view);
+  state._csv = buildCSV(cols, cats, catTotals, grand, sub);
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function wireTable(view){
+  view.querySelectorAll("tr.cat").forEach(tr => tr.addEventListener("click", ()=>{
+    const id = Number(tr.dataset.cat);
+    state.openCats.has(id) ? state.openCats.delete(id) : state.openCats.add(id);
+    render();
+  }));
+  view.querySelectorAll("th.year").forEach(th => th.addEventListener("click", ()=>{
+    const y = Number(th.dataset.year);
+    state.openYears.has(y) ? state.openYears.delete(y) : state.openYears.add(y);
+    render();
+  }));
+  // column hover highlight
+  view.addEventListener("mouseover", e=>{
+    const c = e.target.closest("[data-c]"); if(!c) return;
+    view.querySelectorAll(".colhl").forEach(el=>el.classList.remove("colhl"));
+    view.querySelectorAll(`td[data-c="${c.dataset.c}"]`).forEach(el=>el.classList.add("colhl"));
+  });
+  view.addEventListener("mouseleave", ()=> view.querySelectorAll(".colhl").forEach(el=>el.classList.remove("colhl")));
+}
+
+/* ---------- CSV export ---------- */
+function buildCSV(cols, cats, catTotals, grand, sub){
+  const head = ["Kategória", ...cols.map(c =>
+    c.type==="m" ? `${c.y}-${String(c.ym%100).padStart(2,"0")}` : c.type==="y" ? `${c.y} össz.` : "Összesen")];
+  const line = (name,t)=>[name, ...cols.map(c=>{
+    const v = c.type==="m" ? (t.perYM.get(c.ym)||0) : c.type==="y" ? (t.yT[c.y]||0) : t.g;
+    return Math.round(v);
+  })];
+  const rows=[head];
+  for(const [cid,c] of cats){
+    rows.push(line(c.name, catTotals.get(cid)));
+    for(const [sid,m] of c.subs){
+      const t={perYM:m,yT:{},g:0}; for(const [ym,v] of m){const y=Math.floor(ym/100);t.yT[y]=(t.yT[y]||0)+v;t.g+=v;}
+      if(Math.abs(t.g)>=0.5) rows.push(line("  "+((sub.get(sid)||{}).name||UNCAT), t));
+    }
+  }
+  rows.push(line("Nettó cashflow", grand));
+  return rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+}
+
+/* ---------- toolbar wiring ---------- */
+function wireToolbar(){
+  const sel = document.getElementById("company");
+  for(const c of DB.Companies){
+    const o=document.createElement("option"); o.value=c.id; o.textContent=c.Company_Name||("#"+c.id);
+    sel.appendChild(o);
+  }
+  sel.addEventListener("change", ()=>{ state.company=Number(sel.value); render(); });
+
+  const g=document.getElementById("modeGross"), n=document.getElementById("modeNet");
+  const setMode = net => { state.bankNet=net;
+    g.setAttribute("aria-pressed", String(!net)); n.setAttribute("aria-pressed", String(net)); render(); };
+  g.addEventListener("click", ()=>setMode(false));
+  n.addEventListener("click", ()=>setMode(true));
+
+  document.getElementById("expandAll").addEventListener("click", ()=>{
+    const {agg} = aggregate();
+    for(const id of agg.keys()) state.openCats.add(id);
+    render();
+  });
+  document.getElementById("collapseAll").addEventListener("click", ()=>{ state.openCats.clear(); render(); });
+
+  document.getElementById("csv").addEventListener("click", ()=>{
+    if(!state._csv) return;
+    const blob = new Blob(["\uFEFF"+state._csv], {type:"text/csv;charset=utf-8"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="cashflow.csv"; a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  document.getElementById("refresh").addEventListener("click", refresh);
+}
+
+async function refresh(){
+  const stamp=document.getElementById("stamp");
+  stamp.textContent="Betöltés…";
+  try{
+    await loadAll(); render();
+    stamp.textContent="Frissítve "+new Date().toLocaleTimeString("hu-HU",{hour:"2-digit",minute:"2-digit"});
+  }catch(err){
+    document.getElementById("view").innerHTML =
+      `<div class="state"><div class="big">Nem sikerült betölteni az adatokat</div>
+       A widget beállításainál a hozzáférést állítsd <code>Full document access</code>-re,
+       majd kattints a Frissítés gombra.<br><br><code>${esc(err.message||err)}</code></div>`;
+    stamp.textContent="";
+  }
+}
+
+grist.ready({ requiredAccess: "full" });
+(async ()=>{ try{ await loadAll(); wireToolbar(); render();
+    document.getElementById("stamp").textContent="Frissítve "+new Date().toLocaleTimeString("hu-HU",{hour:"2-digit",minute:"2-digit"});
+  }catch(err){
+    document.getElementById("view").innerHTML =
+      `<div class="state"><div class="big">Nem sikerült betölteni az adatokat</div>
+       A widget beállításainál a hozzáférést állítsd <code>Full document access</code>-re.<br><br>
+       <code>${esc(err.message||err)}</code></div>`;
+  }})();
+</script>
+</body>
+</html>
