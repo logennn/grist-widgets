@@ -8,9 +8,13 @@
 <style>
   :root{
     --paper:#FBFBF9; --ink:#1B1D1C; --muted:#6B6E6A; --faint:#9A9D98;
-    --line:#E5E3DC; --line-strong:#C9C7BF; --band:#F2F0E9; --band-hover:#ECEAE1;
+    --line:#E5E3DC; --line-strong:#C9C7BF; 
     --income:#0F6E56; --outflow:#A32D2D; --accent:#19543F;
-    --row-hover:#F6F5F0; --col-hover:#F1F4F0; --total-bg:#EDF2EE;
+    --row-hover:#F1F3EE; --col-hover:#F1F4F0; 
+    --total-bg:#EDF2EE; /* Yearly totals */
+    --gtot-bg:#E1E8E3; /* Grand total distinct color */
+    --gtot-line:#A3B8AD;
+    --gtot-text:#0D4532;
     --radius:10px;
   }
   *{box-sizing:border-box}
@@ -48,61 +52,72 @@
     font-size:11.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);
     text-align:right;border-bottom:1.5px solid var(--line-strong);
   }
-  thead th.lbl{text-align:left;}
+  thead th.lbl{text-align:left; z-index:6;}
   th.year{cursor:pointer;user-select:none;color:var(--ink);}
-  th.year:hover{background:var(--band);}
+  th.year:hover{background:var(--row-hover);}
   th.year .chev{display:inline-block;margin-right:4px;color:var(--faint);transition:transform .15s;}
   th.year.open .chev{transform:rotate(90deg);}
-  th.gtot{background:var(--total-bg);color:var(--accent);}
+  
+  /* Distinct Grand Total styling */
+  th.gtot{background:var(--gtot-bg); color:var(--gtot-text); border-left:2px solid var(--gtot-line); border-bottom:2px solid var(--gtot-line);}
+  td.gtot{background:var(--gtot-bg); border-left:2px solid var(--gtot-line); font-weight:700; color:var(--gtot-text);}
 
   td{text-align:right;font-size:13.5px;}
-  td.lbl{text-align:left;}
   td.num{color:var(--ink);}
   td.neg{color:var(--outflow);}
   td.pos{color:var(--income);}
   td.zero{color:var(--faint);}
-  td.ytot{border-left:1px solid var(--line);font-weight:600;}
-  td.gtot{background:var(--total-bg);font-weight:600;border-left:1px solid var(--line-strong);}
+  td.ytot{border-left:1px solid var(--line);font-weight:600;background:var(--total-bg);}
 
   /* sticky first column */
   th:first-child,td:first-child{
-    position:sticky;left:0;z-index:3;background:#fff;
-    border-right:1px solid var(--line);max-width:280px;overflow:hidden;text-overflow:ellipsis;
+    position:sticky;left:0;z-index:3;
+    border-right:1px solid var(--line);max-width:320px;overflow:hidden;text-overflow:ellipsis;
   }
-  thead th:first-child{z-index:6;}
 
-  /* category rows */
-  tr.cat td{background:var(--band);font-weight:600;cursor:pointer;user-select:none;}
-  tr.cat:hover td{background:var(--band-hover);}
-  tr.cat td:first-child{background:var(--band);}
-  tr.cat:hover td:first-child{background:var(--band-hover);}
-  tr.cat .chev{display:inline-block;width:14px;color:var(--muted);transition:transform .15s;}
-  tr.cat.open .chev{transform:rotate(90deg);}
-  tr.sub td:first-child{padding-left:34px;color:var(--muted);font-size:13px;background:#fff;}
-  tr.sub td{font-size:13px;}
-  tr.sub:hover td{background:var(--row-hover);}
-  tr.sub:hover td:first-child{background:var(--row-hover);}
+  /* Tree hierarchy rows */
+  tr.node{cursor:pointer;user-select:none;}
+  tr.node .chev{display:inline-block;width:14px;color:var(--muted);transition:transform .15s;}
+  tr.node.open .chev{transform:rotate(90deg);}
+  
+  /* Levels styling */
+  tr.lvl1 td{background:#EBECE8; font-weight:700;}
+  tr.lvl1:hover td{background:#E2E3DF;}
+  td.lbl-lvl1{padding-left:12px;}
 
-  /* grand total — the accountant's double rule */
+  tr.lvl2 td{background:#F4F5F1; font-weight:600;}
+  tr.lvl2:hover td{background:#EAECED;}
+  td.lbl-lvl2{padding-left:32px;}
+
+  tr.lvl3 td{background:#FBFBF9; font-weight:600;}
+  tr.lvl3:hover td{background:var(--row-hover);}
+  td.lbl-lvl3{padding-left:52px;}
+
+  tr.lvl4 td{background:#FFFFFF; font-weight:400;}
+  tr.lvl4:hover td{background:var(--row-hover);}
+  td.lbl-lvl4{padding-left:72px; color:var(--muted);}
+
+  /* grand total bottom row */
   tr.grand td{
     font-weight:700;background:#fff;
     border-top:2px solid var(--ink);border-bottom:6px double var(--ink);
     position:sticky;bottom:0;z-index:4;
   }
   tr.grand td:first-child{z-index:5;}
+  tr.grand td.gtot{border-top:2px solid var(--gtot-text); border-bottom:6px double var(--gtot-text);}
 
   td.colhl{background:var(--col-hover) !important;}
 
   /* states */
   .state{padding:60px 20px;text-align:center;color:var(--muted);}
   .state .big{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px;}
-  .state code{background:var(--band);padding:2px 6px;border-radius:6px;font-size:12px;}
+  .state code{background:#EBECE8;padding:2px 6px;border-radius:6px;font-size:12px;}
   .pulse{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);
     margin-right:8px;animation:pulse 1s ease-in-out infinite;}
   @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
   @media (prefers-reduced-motion:reduce){
     .pulse{animation:none}
-    th.year .chev,tr.cat .chev{transition:none}
+    th.year .chev,tr.node .chev{transition:none}
   }
 </style>
 </head>
@@ -138,23 +153,20 @@
 
 /* ================= CONFIG =================
    Subcategories whose data comes EXCLUSIVELY from Timesheets.
-   Matching rows in Bank_Transactions / Expenses are skipped
-   to prevent double counting. Edit here if needed.            */
+   Matching rows in Bank_Transactions / Expenses are skipped. */
 const PAYROLL_TAX_SUBCATS = ["SZJA", "SZOCHO", "TBJ"];
-const PAYROLL_PARENT_CAT  = "Közvetlen Munkaerő";
-const REVENUE_CAT         = "Bevétel";
-const UNCAT               = "Nem kategorizált";
 /* ========================================== */
 
 const HUF = new Intl.NumberFormat('hu-HU', {maximumFractionDigits: 0});
 const MONTHS_HU = ["jan","feb","márc","ápr","máj","jún","júl","aug","szep","okt","nov","dec"];
+const MISSING_VENDOR = "Nem megadott";
 
-let DB = null;            // normalized raw rows per table
+let DB = null;            
 let state = {
-  company: 0,             // 0 = all
-  bankNet: false,         // false = Bruttó (Amount), true = Nettó (Net_Amount)
-  openCats: new Set(),    // category ids expanded
-  openYears: new Set(),   // years expanded into months
+  company: 0,             
+  bankNet: false,         
+  openNodes: new Set(),   // format: "P_12", "M_12_5", "S_12_5_8"
+  openYears: new Set(),   
 };
 
 /* ---------- Grist plumbing ---------- */
@@ -168,11 +180,11 @@ function rowsOf(t){
 function ymOf(epoch){
   if(!epoch) return null;
   const d = new Date(epoch*1000);
-  return d.getUTCFullYear()*100 + (d.getUTCMonth()+1);   // e.g. 202604
+  return d.getUTCFullYear()*100 + (d.getUTCMonth()+1); 
 }
 
 async function loadAll(){
-  const names = ["Timesheets","Bank_Transactions","Expenses","Categories","SubCategories","Companies"];
+  const names = ["Timesheets","Bank_Transactions","Expenses","Categories","SubCategories","Companies","Employees","Projects"];
   const tabs = await Promise.all(names.map(n => grist.docApi.fetchTable(n)));
   DB = {};
   names.forEach((n,i) => DB[n] = rowsOf(tabs[i]));
@@ -180,16 +192,18 @@ async function loadAll(){
 
 /* ---------- aggregation ---------- */
 function aggregate(){
-  const catName = new Map(DB.Categories.map(c => [c.id, c.Name || ("#"+c.id)]));
-  const sub = new Map(DB.SubCategories.map(s => [s.id, {name: s.Name || ("#"+s.id), parent: s.Parent_Category||0}]));
+  // Dictionaries for mapping IDs to names
+  const empMap = new Map(DB.Employees.map(e => [e.id, e.Name]));
+  const projMap = new Map(DB.Projects.map(p => [p.id, p.Project || p.Name]));
+  const catMap = new Map(DB.Categories.map(c => [c.id, c.Name || ("#"+c.id)]));
+  const subMap = new Map(DB.SubCategories.map(s => [s.id, {name: s.Name || ("#"+s.id), parent: s.Parent_Category||0}]));
 
-  // resolve special ids by NAME — no magic numbers
   const subIdByName = {};
   for(const s of DB.SubCategories){
     if(PAYROLL_TAX_SUBCATS.includes(s.Name)) subIdByName[s.Name] = s.id;
   }
-  const payrollParentId = (DB.Categories.find(c => c.Name === PAYROLL_PARENT_CAT)||{}).id || -1;
-  const taxParentId = subIdByName["SZJA"] ? sub.get(subIdByName["SZJA"]).parent : -1;
+  const payrollParentId = (DB.Categories.find(c => c.Name === "Közvetlen Munkaerő")||{}).id || -1;
+  const taxParentId = subIdByName["SZJA"] ? subMap.get(subIdByName["SZJA"]).parent : -1;
 
   const excludedSubIds = new Set();
   for(const s of DB.SubCategories){
@@ -197,69 +211,131 @@ function aggregate(){
       excludedSubIds.add(s.id);
   }
 
-  // agg[catId] = {name, subs: Map(subId -> Map(ym -> val))}
-  const agg = new Map();
-  const add = (catId, subId, ym, val) => {
-    if(!ym || !val) return;
-    if(!catId){ catId = -1; }
-    if(!agg.has(catId)) agg.set(catId, {name: catId===-1 ? UNCAT : (catName.get(catId)||UNCAT), subs:new Map()});
-    const c = agg.get(catId);
-    if(!c.subs.has(subId)) c.subs.set(subId, new Map());
-    const m = c.subs.get(subId);
-    m.set(ym, (m.get(ym)||0) + val);
+  // Tree: Project -> MainCat -> SubCat -> Vendor
+  const tree = new Map();
+  const add = (pId, mId, sId, vendorName, ym, val) => {
+    if(!pId || !mId || !sId || !ym || !val) return; // Strict Drop Filter
+    
+    if(!tree.has(pId)) tree.set(pId, {name: projMap.get(pId) || `#${pId}`, mCats: new Map()});
+    const pNode = tree.get(pId);
+    
+    if(!pNode.mCats.has(mId)) pNode.mCats.set(mId, {name: catMap.get(mId) || `#${mId}`, sCats: new Map()});
+    const mNode = pNode.mCats.get(mId);
+    
+    if(!mNode.sCats.has(sId)) mNode.sCats.set(sId, {name: subMap.has(sId) ? subMap.get(sId).name : `#${sId}`, vendors: new Map()});
+    const sNode = mNode.sCats.get(sId);
+    
+    const vName = vendorName || MISSING_VENDOR;
+    if(!sNode.vendors.has(vName)) sNode.vendors.set(vName, new Map());
+    const vMap = sNode.vendors.get(vName);
+    
+    vMap.set(ym, (vMap.get(ym)||0) + val);
   };
-  const subCat = id => sub.has(id) ? sub.get(id).parent : 0;
-
+  const subCatParent = id => subMap.has(id) ? subMap.get(id).parent : 0;
   const co = state.company;
 
-  /* 1 — Timesheets: all payroll, signed negative (outflow) */
+  /* 1 — Timesheets */
   for(const r of DB.Timesheets){
     if(co && r.Company !== co) continue;
     const ym = ymOf(r.Date); if(!ym) continue;
-    if(r.Sub_Category) add(subCat(r.Sub_Category), r.Sub_Category, ym, -(r.Allocated_Wage_Cost||0));
-    if(subIdByName["TBJ"])    add(taxParentId, subIdByName["TBJ"],    ym, -(r.Allocated_TBJ||0));
-    if(subIdByName["SZJA"])   add(taxParentId, subIdByName["SZJA"],   ym, -(r.Allocated_SZJA||0));
-    if(subIdByName["SZOCHO"]) add(taxParentId, subIdByName["SZOCHO"], ym, -(r.Allocated_Szocho||0));
+    
+    const pId = r.Project;
+    const vendor = empMap.get(r.Employee) || MISSING_VENDOR;
+    
+    // Normal Wage
+    if(r.Sub_Category){
+      const mId = r.Main_Category || subCatParent(r.Sub_Category);
+      add(pId, mId, r.Sub_Category, vendor, ym, -(r.Allocated_Wage_Cost||0));
+    }
+    // Taxes (Mapped to the project they belong to)
+    if(subIdByName["TBJ"])    add(pId, taxParentId, subIdByName["TBJ"],    vendor, ym, -(r.Allocated_TBJ||0));
+    if(subIdByName["SZJA"])   add(pId, taxParentId, subIdByName["SZJA"],   vendor, ym, -(r.Allocated_SZJA||0));
+    if(subIdByName["SZOCHO"]) add(pId, taxParentId, subIdByName["SZOCHO"], vendor, ym, -(r.Allocated_Szocho||0));
   }
 
-  /* 2 — Bank_Transactions: everything except payroll subcats */
+  /* 2 — Bank_Transactions */
   for(const r of DB.Bank_Transactions){
     if(co && r.Company !== co) continue;
     if(r.Sub_Category && excludedSubIds.has(r.Sub_Category)) continue;
     const ym = ymOf(r.Date); if(!ym) continue;
+    
+    const pId = r.Project;
+    const mId = r.Category || subCatParent(r.Sub_Category);
+    const sId = r.Sub_Category;
+    const vendor = r.Partner || MISSING_VENDOR;
     const val = state.bankNet ? (r.Net_Amount||0) : (r.Amount||0);
-    add(r.Category || subCat(r.Sub_Category), r.Sub_Category||0, ym, val);
+    
+    add(pId, mId, sId, vendor, ym, val);
   }
 
-  /* 3 — Expenses: cash costs, negative; except payroll subcats */
+  /* 3 — Expenses */
   for(const r of DB.Expenses){
     if(co && r.Company !== co) continue;
     if(r.Sub_Category && excludedSubIds.has(r.Sub_Category)) continue;
     const ym = ymOf(r.Date); if(!ym) continue;
-    add(r.Main_Category || subCat(r.Sub_Category), r.Sub_Category||0, ym, -(r.Amount||0));
+    
+    const pId = r.Project;
+    const mId = r.Category || subCatParent(r.Sub_Category); // Category in expenses maps to Main
+    const sId = r.Sub_Category;
+    const vendor = r.Vendor || MISSING_VENDOR;
+    
+    add(pId, mId, sId, vendor, ym, -(r.Amount||0));
   }
 
-  return {agg, sub};
+  return {tree};
+}
+
+/* ---------- sum & formatting ---------- */
+function sumRow(perYM){
+  const yT = {}; let g=0;
+  for(const [ym,v] of perYM){ const y=Math.floor(ym/100); yT[y]=(yT[y]||0)+v; g+=v; }
+  return {perYM, yT, g};
+}
+function mergeMaps(dest, src){
+  for(const [ym, val] of src) dest.set(ym, (dest.get(ym)||0) + val);
 }
 
 /* ---------- rendering ---------- */
 function render(){
-  const {agg, sub} = aggregate();
+  const {tree} = aggregate();
   const view = document.getElementById("view");
 
-  // collect all year-months present
+  // Collect all year-months present
   const ymSet = new Set();
-  for(const c of agg.values()) for(const m of c.subs.values()) for(const ym of m.keys()) ymSet.add(ym);
+  const allTotals = { p: new Map(), m: new Map(), s: new Map(), v: new Map(), grand: new Map() };
+  
+  // Calculate Totals bottom-up
+  for(const [pId, pNode] of tree){
+    const pMerged = new Map();
+    for(const [mId, mNode] of pNode.mCats){
+      const mMerged = new Map();
+      for(const [sId, sNode] of mNode.sCats){
+        const sMerged = new Map();
+        for(const [vName, vMap] of sNode.vendors){
+          for(const ym of vMap.keys()) ymSet.add(ym);
+          allTotals.v.set(`${pId}_${mId}_${sId}_${vName}`, sumRow(vMap));
+          mergeMaps(sMerged, vMap);
+        }
+        allTotals.s.set(`${pId}_${mId}_${sId}`, sumRow(sMerged));
+        mergeMaps(mMerged, sMerged);
+      }
+      allTotals.m.set(`${pId}_${mId}`, sumRow(mMerged));
+      mergeMaps(pMerged, mMerged);
+    }
+    allTotals.p.set(pId, sumRow(pMerged));
+    mergeMaps(allTotals.grand, pMerged);
+  }
+
   if(!ymSet.size){
     view.innerHTML = `<div class="state"><div class="big">Nincs megjeleníthető adat</div>
-      Ellenőrizd a cégszűrőt, vagy hogy a táblákban van-e dátumozott rekord.</div>`;
+      Ellenőrizd a cégszűrőt, vagy hogy a tranzakciókhoz van-e projekt, fő- és alkategória rendelve.</div>`;
     return;
   }
   const allYM = [...ymSet].sort((a,b)=>a-b);
   const years = [...new Set(allYM.map(ym=>Math.floor(ym/100)))].sort((a,b)=>a-b);
   if(!state._initYears){ state.openYears.add(years[years.length-1]); state._initYears = true; }
 
-  // columns: per year → months (if open) + year total; then grand total
+  // Columns setup
   const cols = [];
   for(const y of years){
     if(state.openYears.has(y)){
@@ -270,33 +346,8 @@ function render(){
   }
   cols.push({type:"g"});
 
-  // sort categories: Bevétel first, Nem kategorizált last, rest hu-alphabetical
-  const cats = [...agg.entries()].sort((a,b)=>{
-    const an=a[1].name, bn=b[1].name;
-    if(an===REVENUE_CAT) return -1; if(bn===REVENUE_CAT) return 1;
-    if(an===UNCAT) return 1; if(bn===UNCAT) return -1;
-    return an.localeCompare(bn,'hu');
-  });
-
-  const sumRow = (cells) => {
-    const perYM = cells; // Map ym->val
-    const yT = {}; let g=0;
-    for(const [ym,v] of perYM){ const y=Math.floor(ym/100); yT[y]=(yT[y]||0)+v; g+=v; }
-    return {perYM, yT, g};
-  };
-  const catTotals = new Map();
-  for(const [cid,c] of cats){
-    const merged = new Map();
-    for(const m of c.subs.values()) for(const [ym,v] of m) merged.set(ym,(merged.get(ym)||0)+v);
-    catTotals.set(cid, sumRow(merged));
-  }
-  // grand
-  const grandM = new Map();
-  for(const t of catTotals.values()) for(const [ym,v] of t.perYM) grandM.set(ym,(grandM.get(ym)||0)+v);
-  const grand = sumRow(grandM);
-
-  const fmt = v => {
-    if(!v || Math.abs(v) < 0.5) return `<td class="zero" data-c="$C">–</td>`;
+  const fmt = (v, isZero=false) => {
+    if(isZero || !v || Math.abs(v) < 0.5) return `<td class="zero" data-c="$C">–</td>`;
     const cls = v<0 ? "neg" : "pos";
     return `<td class="num ${cls}" data-c="$C">${HUF.format(Math.round(v))}</td>`;
   };
@@ -310,40 +361,70 @@ function render(){
     return html;
   }).join("");
 
-  let thead = `<tr><th class="lbl">Kategória</th>`;
+  let thead = `<tr><th class="lbl">Projekt / Kategória</th>`;
   thead += cols.map((c,i)=>{
     if(c.type==="m") return `<th data-c="${i}">${MONTHS_HU[(c.ym%100)-1]}</th>`;
     if(c.type==="y") return `<th class="year ${state.openYears.has(c.y)?"open":""}" data-year="${c.y}" data-c="${i}" title="Kattints a hónapok mutatásához"><span class="chev">▸</span>${c.y}</th>`;
     return `<th class="gtot" data-c="${i}">Összesen</th>`;
   }).join("") + `</tr>`;
 
+  // Sorting utilities
+  const huSort = (a,b) => String(a).localeCompare(String(b), 'hu', {numeric: true});
+  
   let body = "";
-  for(const [cid,c] of cats){
-    const open = state.openCats.has(cid);
-    body += `<tr class="cat ${open?"open":""}" data-cat="${cid}">
-      <td class="lbl"><span class="chev">▸</span>${esc(c.name)}</td>${cellsFor(catTotals.get(cid))}</tr>`;
-    if(open){
-      const subs = [...c.subs.entries()]
-        .map(([sid,m])=>({sid, name: sid? (sub.get(sid)||{}).name||UNCAT : UNCAT, t:sumRow(m)}))
-        .filter(s => Math.abs(s.t.g) >= 0.5)
-        .sort((a,b)=>a.name.localeCompare(b.name,'hu'));
-      for(const s of subs)
-        body += `<tr class="sub"><td class="lbl">${esc(s.name)}</td>${cellsFor(s.t)}</tr>`;
+  
+  // Lvl 1: Projects
+  const sortedProjs = [...tree.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
+  for(const [pId, pNode] of sortedProjs){
+    const pOpen = state.openNodes.has(`P_${pId}`);
+    body += `<tr class="node lvl1 ${pOpen?"open":""}" data-node="P_${pId}">
+      <td class="lbl lbl-lvl1"><span class="chev">▸</span>${esc(pNode.name)}</td>${cellsFor(allTotals.p.get(pId))}</tr>`;
+    
+    if(pOpen){
+      // Lvl 2: Main Cats
+      const sortedMCats = [...pNode.mCats.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
+      for(const [mId, mNode] of sortedMCats){
+        const mOpen = state.openNodes.has(`M_${pId}_${mId}`);
+        body += `<tr class="node lvl2 ${mOpen?"open":""}" data-node="M_${pId}_${mId}">
+          <td class="lbl lbl-lvl2"><span class="chev">▸</span>${esc(mNode.name)}</td>${cellsFor(allTotals.m.get(`${pId}_${mId}`))}</tr>`;
+        
+        if(mOpen){
+          // Lvl 3: Sub Cats
+          const sortedSCats = [...mNode.sCats.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
+          for(const [sId, sNode] of sortedSCats){
+            const sOpen = state.openNodes.has(`S_${pId}_${mId}_${sId}`);
+            body += `<tr class="node lvl3 ${sOpen?"open":""}" data-node="S_${pId}_${mId}_${sId}">
+              <td class="lbl lbl-lvl3"><span class="chev">▸</span>${esc(sNode.name)}</td>${cellsFor(allTotals.s.get(`${pId}_${mId}_${sId}`))}</tr>`;
+            
+            if(sOpen){
+              // Lvl 4: Vendors
+              const sortedVendors = [...sNode.vendors.keys()].sort((a,b)=>{
+                if(a===MISSING_VENDOR) return 1; if(b===MISSING_VENDOR) return -1;
+                return huSort(a,b);
+              });
+              for(const vName of sortedVendors){
+                body += `<tr class="node lvl4">
+                  <td class="lbl lbl-lvl4">${esc(vName)}</td>${cellsFor(allTotals.v.get(`${pId}_${mId}_${sId}_${vName}`))}</tr>`;
+              }
+            }
+          }
+        }
+      }
     }
   }
-  body += `<tr class="grand"><td class="lbl">Nettó cashflow</td>${cellsFor(grand)}</tr>`;
+  body += `<tr class="grand"><td class="lbl">Nettó cashflow</td>${cellsFor(sumRow(allTotals.grand))}</tr>`;
 
   view.innerHTML = `<table>${thead}${body}</table>`;
-  wireTable(view);
-  state._csv = buildCSV(cols, cats, catTotals, grand, sub);
+  wireTable(view, tree);
+  state._csv = buildCSV(cols, tree, allTotals, sumRow(allTotals.grand));
 }
 
 function esc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-function wireTable(view){
-  view.querySelectorAll("tr.cat").forEach(tr => tr.addEventListener("click", ()=>{
-    const id = Number(tr.dataset.cat);
-    state.openCats.has(id) ? state.openCats.delete(id) : state.openCats.add(id);
+function wireTable(view, tree){
+  view.querySelectorAll("tr.node[data-node]").forEach(tr => tr.addEventListener("click", ()=>{
+    const n = tr.dataset.node;
+    state.openNodes.has(n) ? state.openNodes.delete(n) : state.openNodes.add(n);
     render();
   }));
   view.querySelectorAll("th.year").forEach(th => th.addEventListener("click", ()=>{
@@ -351,32 +432,59 @@ function wireTable(view){
     state.openYears.has(y) ? state.openYears.delete(y) : state.openYears.add(y);
     render();
   }));
-  // column hover highlight
   view.addEventListener("mouseover", e=>{
     const c = e.target.closest("[data-c]"); if(!c) return;
     view.querySelectorAll(".colhl").forEach(el=>el.classList.remove("colhl"));
     view.querySelectorAll(`td[data-c="${c.dataset.c}"]`).forEach(el=>el.classList.add("colhl"));
   });
   view.addEventListener("mouseleave", ()=> view.querySelectorAll(".colhl").forEach(el=>el.classList.remove("colhl")));
+  
+  // Attach expand all logic so we have the tree object available
+  document.getElementById("expandAll").onclick = () => {
+    for(const [pId, pNode] of tree){
+      state.openNodes.add(`P_${pId}`);
+      for(const [mId, mNode] of pNode.mCats){
+        state.openNodes.add(`M_${pId}_${mId}`);
+        for(const sId of mNode.sCats.keys()) state.openNodes.add(`S_${pId}_${mId}_${sId}`);
+      }
+    }
+    render();
+  };
 }
 
 /* ---------- CSV export ---------- */
-function buildCSV(cols, cats, catTotals, grand, sub){
-  const head = ["Kategória", ...cols.map(c =>
+function buildCSV(cols, tree, allTotals, grand){
+  const head = ["Szint 1", "Szint 2", "Szint 3", "Szint 4", ...cols.map(c =>
     c.type==="m" ? `${c.y}-${String(c.ym%100).padStart(2,"0")}` : c.type==="y" ? `${c.y} össz.` : "Összesen")];
-  const line = (name,t)=>[name, ...cols.map(c=>{
+  
+  const line = (n1,n2,n3,n4,t)=>[n1,n2,n3,n4, ...cols.map(c=>{
     const v = c.type==="m" ? (t.perYM.get(c.ym)||0) : c.type==="y" ? (t.yT[c.y]||0) : t.g;
     return Math.round(v);
   })];
+  
   const rows=[head];
-  for(const [cid,c] of cats){
-    rows.push(line(c.name, catTotals.get(cid)));
-    for(const [sid,m] of c.subs){
-      const t={perYM:m,yT:{},g:0}; for(const [ym,v] of m){const y=Math.floor(ym/100);t.yT[y]=(t.yT[y]||0)+v;t.g+=v;}
-      if(Math.abs(t.g)>=0.5) rows.push(line("  "+((sub.get(sid)||{}).name||UNCAT), t));
+  const huSort = (a,b) => String(a).localeCompare(String(b), 'hu', {numeric: true});
+  const sortedProjs = [...tree.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
+  
+  for(const [pId, pNode] of sortedProjs){
+    rows.push(line(pNode.name, "","", "", allTotals.p.get(pId)));
+    const sortedMCats = [...pNode.mCats.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
+    
+    for(const [mId, mNode] of sortedMCats){
+      rows.push(line("", mNode.name, "", "", allTotals.m.get(`${pId}_${mId}`)));
+      const sortedSCats = [...mNode.sCats.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
+      
+      for(const [sId, sNode] of sortedSCats){
+        rows.push(line("", "", sNode.name, "", allTotals.s.get(`${pId}_${mId}_${sId}`)));
+        const sortedVendors = [...sNode.vendors.keys()].sort((a,b)=>(a===MISSING_VENDOR?1:b===MISSING_VENDOR?-1:huSort(a,b)));
+        
+        for(const vName of sortedVendors){
+          rows.push(line("", "", "", vName, allTotals.v.get(`${pId}_${mId}_${sId}_${vName}`)));
+        }
+      }
     }
   }
-  rows.push(line("Nettó cashflow", grand));
+  rows.push(line("Nettó cashflow", "","", "", grand));
   return rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(";")).join("\r\n");
 }
 
@@ -395,12 +503,7 @@ function wireToolbar(){
   g.addEventListener("click", ()=>setMode(false));
   n.addEventListener("click", ()=>setMode(true));
 
-  document.getElementById("expandAll").addEventListener("click", ()=>{
-    const {agg} = aggregate();
-    for(const id of agg.keys()) state.openCats.add(id);
-    render();
-  });
-  document.getElementById("collapseAll").addEventListener("click", ()=>{ state.openCats.clear(); render(); });
+  document.getElementById("collapseAll").addEventListener("click", ()=>{ state.openNodes.clear(); render(); });
 
   document.getElementById("csv").addEventListener("click", ()=>{
     if(!state._csv) return;
