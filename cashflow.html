@@ -7,19 +7,19 @@
 <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 <style>
   :root{
-    --paper:#FBFBF9; --ink:#1B1D1C; --muted:#6B6E6A; --faint:#9A9D98;
-    --line:#E5E3DC; --line-strong:#C9C7BF; 
-    --income:#0F6E56; --outflow:#A32D2D; --accent:#19543F;
-    --row-hover:#F1F3EE; --col-hover:#F1F4F0; 
-    --total-bg:#EDF2EE; /* Yearly totals */
-    --gtot-bg:#E1E8E3; /* Grand total distinct color */
-    --gtot-line:#A3B8AD;
-    --gtot-text:#0D4532;
-    --radius:10px;
+    /* Clean, modern, Excel-like palette */
+    --paper: #FFFFFF; --ink: #1B1D1C; --muted: #64748B; --faint: #94A3B8;
+    --line: #E2E8F0; --line-strong: #CBD5E1; 
+    --income: #059669; --outflow: #DC2626; --accent: #0284C7;
+    --row-hover: #F8FAFC; --col-hover: #F1F5F9; 
+    --total-bg: #F8FAFC; 
+    --gtot-bg: #E0F2FE; --gtot-line: #7DD3FC; --gtot-text: #0369A1;
+    --select-bg: rgba(2, 132, 199, 0.15); --select-border: #0284C7;
+    --radius: 8px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);
-    font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
+    font:13.5px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
   .wrap{padding:14px 16px 22px;}
 
   /* ---------- toolbar ---------- */
@@ -27,98 +27,115 @@
   .bar h1{font-size:16px;font-weight:600;letter-spacing:.2px;margin:0 8px 0 0;}
   .bar h1 span{color:var(--faint);font-weight:400;}
   .ctl{display:flex;align-items:center;gap:6px;}
-  .ctl label{font-size:12px;color:var(--muted);}
+  .ctl label{font-size:12px;color:var(--muted);font-weight:500;}
   select,button{
     font:inherit;font-size:13px;color:var(--ink);background:#fff;
-    border:1px solid var(--line-strong);border-radius:8px;padding:6px 10px;cursor:pointer;
+    border:1px solid var(--line-strong);border-radius:6px;padding:5px 10px;cursor:pointer;
   }
   select:hover,button:hover{border-color:var(--faint);}
   select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
   button:active{transform:translateY(1px);}
-  .seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden;}
-  .seg button{border:0;border-radius:0;background:#fff;padding:6px 12px;}
+  .seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:6px;overflow:hidden;}
+  .seg button{border:0;border-radius:0;background:#fff;padding:5px 12px;}
   .seg button+button{border-left:1px solid var(--line-strong);}
-  .seg button[aria-pressed="true"]{background:var(--accent);color:#fff;}
+  .seg button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:500;}
   .spacer{flex:1}
   .stamp{font-size:12px;color:var(--faint);}
 
   /* ---------- table ---------- */
   .scroller{overflow:auto;max-height:82vh;border:1px solid var(--line);border-radius:var(--radius);background:#fff;}
   table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;
-    font-variant-numeric:tabular-nums;}
-  th,td{padding:7px 12px;white-space:nowrap;border-bottom:1px solid var(--line);}
+    font-variant-numeric:tabular-nums; user-select:none;}
+  th,td{padding:6px 12px;white-space:nowrap;border-bottom:1px solid var(--line);}
+  
   thead th{
     position:sticky;top:0;z-index:5;background:#fff;
     font-size:11.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);
-    text-align:right;border-bottom:1.5px solid var(--line-strong);
+    text-align:right;border-bottom:2px solid var(--line-strong);
   }
-  thead th.lbl{text-align:left; z-index:6;}
-  th.year{cursor:pointer;user-select:none;color:var(--ink);}
+  
+  th.year{cursor:pointer;color:var(--ink);}
   th.year:hover{background:var(--row-hover);}
   th.year .chev{display:inline-block;margin-right:4px;color:var(--faint);transition:transform .15s;}
   th.year.open .chev{transform:rotate(90deg);}
   
   /* Distinct Grand Total styling */
   th.gtot{background:var(--gtot-bg); color:var(--gtot-text); border-left:2px solid var(--gtot-line); border-bottom:2px solid var(--gtot-line);}
-  td.gtot{background:var(--gtot-bg); border-left:2px solid var(--gtot-line); font-weight:700; color:var(--gtot-text);}
+  td.gtot{background:var(--gtot-bg); border-left:2px solid var(--gtot-line); font-weight:600; color:var(--gtot-text);}
 
-  td{text-align:right;font-size:13.5px;}
+  /* Base cell styling */
+  td{text-align:right;}
   td.num{color:var(--ink);}
   td.neg{color:var(--outflow);}
   td.pos{color:var(--income);}
   td.zero{color:var(--faint);}
   td.ytot{border-left:1px solid var(--line);font-weight:600;background:var(--total-bg);}
 
-  /* sticky first column */
+  /* Selection overlay */
+  td.cell-selected {
+      background: var(--select-bg) !important;
+      outline: 1px solid var(--select-border);
+      outline-offset: -1px;
+  }
+
+  /* Sticky first column & strict left alignment */
+  th.lbl, td.lbl {
+    text-align: left !important;
+  }
   th:first-child,td:first-child{
     position:sticky;left:0;z-index:3;
     border-right:1px solid var(--line);max-width:320px;overflow:hidden;text-overflow:ellipsis;
   }
+  thead th.lbl{z-index:6;}
 
   /* Tree hierarchy rows */
-  tr.node{cursor:pointer;user-select:none;}
-  tr.node .chev{display:inline-block;width:14px;color:var(--muted);transition:transform .15s;}
+  tr.node{cursor:pointer;}
+  tr.node .chev{display:inline-block;width:16px;color:var(--muted);transition:transform .15s;}
   tr.node.open .chev{transform:rotate(90deg);}
   
   /* Levels styling */
-  tr.lvl1 td{background:#EBECE8; font-weight:700;}
-  tr.lvl1:hover td{background:#E2E3DF;}
-  td.lbl-lvl1{padding-left:12px;}
+  tr.lvl1 td{background:#F1F5F9; font-weight:600;}
+  tr.lvl1:hover td{background:#E2E8F0;}
+  td.lbl-lvl1{padding-left:12px !important;}
 
-  tr.lvl2 td{background:#F4F5F1; font-weight:600;}
-  tr.lvl2:hover td{background:#EAECED;}
-  td.lbl-lvl2{padding-left:32px;}
+  tr.lvl2 td{background:#FFFFFF; font-weight:500;}
+  tr.lvl2:hover td{background:var(--row-hover);}
+  td.lbl-lvl2{padding-left:32px !important;}
 
-  tr.lvl3 td{background:#FBFBF9; font-weight:600;}
+  tr.lvl3 td{background:#FFFFFF;}
   tr.lvl3:hover td{background:var(--row-hover);}
-  td.lbl-lvl3{padding-left:52px;}
+  td.lbl-lvl3{padding-left:52px !important;}
 
-  tr.lvl4 td{background:#FFFFFF; font-weight:400;}
+  tr.lvl4 td{background:#FFFFFF; font-size: 12.5px;}
   tr.lvl4:hover td{background:var(--row-hover);}
-  td.lbl-lvl4{padding-left:72px; color:var(--muted);}
+  td.lbl-lvl4{padding-left:72px !important; color:var(--muted);}
 
   /* grand total bottom row */
   tr.grand td{
     font-weight:700;background:#fff;
-    border-top:2px solid var(--ink);border-bottom:6px double var(--ink);
+    border-top:2px solid var(--ink);border-bottom:4px double var(--ink);
     position:sticky;bottom:0;z-index:4;
   }
   tr.grand td:first-child{z-index:5;}
-  tr.grand td.gtot{border-top:2px solid var(--gtot-text); border-bottom:6px double var(--gtot-text);}
+  tr.grand td.gtot{border-top:2px solid var(--gtot-text); border-bottom:4px double var(--gtot-text);}
 
   td.colhl{background:var(--col-hover) !important;}
 
   /* states */
   .state{padding:60px 20px;text-align:center;color:var(--muted);}
   .state .big{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px;}
-  .state code{background:#EBECE8;padding:2px 6px;border-radius:6px;font-size:12px;}
-  .pulse{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);
-    margin-right:8px;animation:pulse 1s ease-in-out infinite;}
-  @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
-  @media (prefers-reduced-motion:reduce){
-    .pulse{animation:none}
-    th.year .chev,tr.node .chev{transition:none}
+  .state code{background:#E2E8F0;padding:2px 6px;border-radius:4px;font-size:12px;}
+
+  /* Status Bar Calculator */
+  #statusBar {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #fff; border: 1px solid var(--line-strong); border-radius: 8px;
+    padding: 10px 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: none; align-items: center; gap: 16px; font-size: 14px;
+    z-index: 100;
   }
+  .sb-item span:first-child { color: var(--muted); margin-right: 6px; font-size: 13px;}
+  .sb-item span:last-child { color: var(--ink); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -132,11 +149,11 @@
     <div class="ctl">
       <label>Bank</label>
       <div class="seg" role="group" aria-label="Bank összegek">
-        <button id="modeGross" aria-pressed="true">Bruttó</button>
-        <button id="modeNet" aria-pressed="false">Nettó</button>
+        <button id="modeGross" aria-pressed="false">Bruttó</button>
+        <button id="modeNet" aria-pressed="true">Nettó</button>
       </div>
     </div>
-    <button id="expandAll">Összes kibontása</button>
+    <button id="expandAll">Kibontás</button>
     <button id="collapseAll">Összecsukás</button>
     <span class="spacer"></span>
     <button id="csv" title="Exportálás CSV-be">CSV</button>
@@ -144,32 +161,31 @@
     <span class="stamp" id="stamp"></span>
   </div>
   <div id="view" class="scroller">
-    <div class="state"><span class="pulse"></span>Adatok betöltése…</div>
+    <div class="state">Adatok betöltése…</div>
   </div>
+</div>
+
+<div id="statusBar">
+  <div class="sb-item"><span>Cella:</span><span id="sumCount">0</span></div>
+  <div class="sb-item"><span>Összeg:</span><span id="sumVal">0</span></div>
 </div>
 
 <script>
 "use strict";
 
-/* ================= CONFIG =================
-   Subcategories whose data comes EXCLUSIVELY from Timesheets.
-   Matching rows in Bank_Transactions / Expenses are skipped. */
 const PAYROLL_TAX_SUBCATS = ["SZJA", "SZOCHO", "TBJ"];
-/* ========================================== */
-
 const HUF = new Intl.NumberFormat('hu-HU', {maximumFractionDigits: 0});
 const MONTHS_HU = ["jan","feb","márc","ápr","máj","jún","júl","aug","szep","okt","nov","dec"];
 const MISSING_VENDOR = "Nem megadott";
 
 let DB = null;            
 let state = {
-  company: 0,             
-  bankNet: false,         
-  openNodes: new Set(),   // format: "P_12", "M_12_5", "S_12_5_8"
+  company: 2,             // Defaults to 2 (Post Balance Prod.)
+  bankNet: true,          // Defaults to Nettó
+  openNodes: new Set(),   
   openYears: new Set(),   
 };
 
-/* ---------- Grist plumbing ---------- */
 function rowsOf(t){
   const keys = Object.keys(t).filter(k => Array.isArray(t[k]));
   const n = t.id ? t.id.length : 0;
@@ -190,31 +206,25 @@ async function loadAll(){
   names.forEach((n,i) => DB[n] = rowsOf(tabs[i]));
 }
 
-/* ---------- aggregation ---------- */
 function aggregate(){
-  // Dictionaries for mapping IDs to names
   const empMap = new Map(DB.Employees.map(e => [e.id, e.Name]));
   const projMap = new Map(DB.Projects.map(p => [p.id, p.Project || p.Name]));
   const catMap = new Map(DB.Categories.map(c => [c.id, c.Name || ("#"+c.id)]));
   const subMap = new Map(DB.SubCategories.map(s => [s.id, {name: s.Name || ("#"+s.id), parent: s.Parent_Category||0}]));
 
   const subIdByName = {};
-  for(const s of DB.SubCategories){
-    if(PAYROLL_TAX_SUBCATS.includes(s.Name)) subIdByName[s.Name] = s.id;
-  }
+  for(const s of DB.SubCategories) if(PAYROLL_TAX_SUBCATS.includes(s.Name)) subIdByName[s.Name] = s.id;
   const payrollParentId = (DB.Categories.find(c => c.Name === "Közvetlen Munkaerő")||{}).id || -1;
   const taxParentId = subIdByName["SZJA"] ? subMap.get(subIdByName["SZJA"]).parent : -1;
 
   const excludedSubIds = new Set();
   for(const s of DB.SubCategories){
-    if(PAYROLL_TAX_SUBCATS.includes(s.Name) || s.Parent_Category === payrollParentId)
-      excludedSubIds.add(s.id);
+    if(PAYROLL_TAX_SUBCATS.includes(s.Name) || s.Parent_Category === payrollParentId) excludedSubIds.add(s.id);
   }
 
-  // Tree: Project -> MainCat -> SubCat -> Vendor
   const tree = new Map();
   const add = (pId, mId, sId, vendorName, ym, val) => {
-    if(!pId || !mId || !sId || !ym || !val) return; // Strict Drop Filter
+    if(!pId || !mId || !sId || !ym || !val) return; 
     
     if(!tree.has(pId)) tree.set(pId, {name: projMap.get(pId) || `#${pId}`, mCats: new Map()});
     const pNode = tree.get(pId);
@@ -231,61 +241,42 @@ function aggregate(){
     
     vMap.set(ym, (vMap.get(ym)||0) + val);
   };
+  
   const subCatParent = id => subMap.has(id) ? subMap.get(id).parent : 0;
   const co = state.company;
 
-  /* 1 — Timesheets */
   for(const r of DB.Timesheets){
     if(co && r.Company !== co) continue;
     const ym = ymOf(r.Date); if(!ym) continue;
-    
     const pId = r.Project;
     const vendor = empMap.get(r.Employee) || MISSING_VENDOR;
-    
-    // Normal Wage
     if(r.Sub_Category){
       const mId = r.Main_Category || subCatParent(r.Sub_Category);
       add(pId, mId, r.Sub_Category, vendor, ym, -(r.Allocated_Wage_Cost||0));
     }
-    // Taxes (Mapped to the project they belong to)
     if(subIdByName["TBJ"])    add(pId, taxParentId, subIdByName["TBJ"],    vendor, ym, -(r.Allocated_TBJ||0));
     if(subIdByName["SZJA"])   add(pId, taxParentId, subIdByName["SZJA"],   vendor, ym, -(r.Allocated_SZJA||0));
     if(subIdByName["SZOCHO"]) add(pId, taxParentId, subIdByName["SZOCHO"], vendor, ym, -(r.Allocated_Szocho||0));
   }
 
-  /* 2 — Bank_Transactions */
   for(const r of DB.Bank_Transactions){
     if(co && r.Company !== co) continue;
     if(r.Sub_Category && excludedSubIds.has(r.Sub_Category)) continue;
     const ym = ymOf(r.Date); if(!ym) continue;
-    
-    const pId = r.Project;
-    const mId = r.Category || subCatParent(r.Sub_Category);
-    const sId = r.Sub_Category;
-    const vendor = r.Partner || MISSING_VENDOR;
-    const val = state.bankNet ? (r.Net_Amount||0) : (r.Amount||0);
-    
-    add(pId, mId, sId, vendor, ym, val);
+    add(r.Project, r.Category || subCatParent(r.Sub_Category), r.Sub_Category, r.Partner || MISSING_VENDOR, ym, state.bankNet ? (r.Net_Amount||0) : (r.Amount||0));
   }
 
-  /* 3 — Expenses */
   for(const r of DB.Expenses){
     if(co && r.Company !== co) continue;
     if(r.Sub_Category && excludedSubIds.has(r.Sub_Category)) continue;
     const ym = ymOf(r.Date); if(!ym) continue;
-    
-    const pId = r.Project;
-    const mId = r.Category || subCatParent(r.Sub_Category); // Category in expenses maps to Main
-    const sId = r.Sub_Category;
-    const vendor = r.Vendor || MISSING_VENDOR;
-    
-    add(pId, mId, sId, vendor, ym, -(r.Amount||0));
+    // Fix applied: Using Main_Category instead of Category
+    add(r.Project, r.Main_Category || subCatParent(r.Sub_Category), r.Sub_Category, r.Vendor || MISSING_VENDOR, ym, -(r.Amount||0));
   }
 
   return {tree};
 }
 
-/* ---------- sum & formatting ---------- */
 function sumRow(perYM){
   const yT = {}; let g=0;
   for(const [ym,v] of perYM){ const y=Math.floor(ym/100); yT[y]=(yT[y]||0)+v; g+=v; }
@@ -295,16 +286,13 @@ function mergeMaps(dest, src){
   for(const [ym, val] of src) dest.set(ym, (dest.get(ym)||0) + val);
 }
 
-/* ---------- rendering ---------- */
 function render(){
   const {tree} = aggregate();
   const view = document.getElementById("view");
 
-  // Collect all year-months present
   const ymSet = new Set();
   const allTotals = { p: new Map(), m: new Map(), s: new Map(), v: new Map(), grand: new Map() };
   
-  // Calculate Totals bottom-up
   for(const [pId, pNode] of tree){
     const pMerged = new Map();
     for(const [mId, mNode] of pNode.mCats){
@@ -335,7 +323,6 @@ function render(){
   const years = [...new Set(allYM.map(ym=>Math.floor(ym/100)))].sort((a,b)=>a-b);
   if(!state._initYears){ state.openYears.add(years[years.length-1]); state._initYears = true; }
 
-  // Columns setup
   const cols = [];
   for(const y of years){
     if(state.openYears.has(y)){
@@ -347,10 +334,12 @@ function render(){
   cols.push({type:"g"});
 
   const fmt = (v, isZero=false) => {
-    if(isZero || !v || Math.abs(v) < 0.5) return `<td class="zero" data-c="$C">–</td>`;
+    const valStr = v || 0;
+    if(isZero || !v || Math.abs(v) < 0.5) return `<td class="zero" data-c="$C" data-val="${valStr}">–</td>`;
     const cls = v<0 ? "neg" : "pos";
-    return `<td class="num ${cls}" data-c="$C">${HUF.format(Math.round(v))}</td>`;
+    return `<td class="num ${cls}" data-c="$C" data-val="${valStr}">${HUF.format(Math.round(v))}</td>`;
   };
+  
   const cellsFor = t => cols.map((c,i)=>{
     let v=0, extra="";
     if(c.type==="m") v = t.perYM.get(c.ym)||0;
@@ -368,28 +357,30 @@ function render(){
     return `<th class="gtot" data-c="${i}">Összesen</th>`;
   }).join("") + `</tr>`;
 
-  // Sorting utilities
   const huSort = (a,b) => String(a).localeCompare(String(b), 'hu', {numeric: true});
   
   let body = "";
-  
-  // Lvl 1: Projects
   const sortedProjs = [...tree.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
+  
   for(const [pId, pNode] of sortedProjs){
     const pOpen = state.openNodes.has(`P_${pId}`);
     body += `<tr class="node lvl1 ${pOpen?"open":""}" data-node="P_${pId}">
       <td class="lbl lbl-lvl1"><span class="chev">▸</span>${esc(pNode.name)}</td>${cellsFor(allTotals.p.get(pId))}</tr>`;
     
     if(pOpen){
-      // Lvl 2: Main Cats
-      const sortedMCats = [...pNode.mCats.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
+      // Sorting Main Cats: Bevétel forced to top
+      const sortedMCats = [...pNode.mCats.entries()].sort((a,b)=>{
+        if(a[1].name === "Bevétel") return -1;
+        if(b[1].name === "Bevétel") return 1;
+        return huSort(a[1].name, b[1].name);
+      });
+      
       for(const [mId, mNode] of sortedMCats){
         const mOpen = state.openNodes.has(`M_${pId}_${mId}`);
         body += `<tr class="node lvl2 ${mOpen?"open":""}" data-node="M_${pId}_${mId}">
           <td class="lbl lbl-lvl2"><span class="chev">▸</span>${esc(mNode.name)}</td>${cellsFor(allTotals.m.get(`${pId}_${mId}`))}</tr>`;
         
         if(mOpen){
-          // Lvl 3: Sub Cats
           const sortedSCats = [...mNode.sCats.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
           for(const [sId, sNode] of sortedSCats){
             const sOpen = state.openNodes.has(`S_${pId}_${mId}_${sId}`);
@@ -397,11 +388,7 @@ function render(){
               <td class="lbl lbl-lvl3"><span class="chev">▸</span>${esc(sNode.name)}</td>${cellsFor(allTotals.s.get(`${pId}_${mId}_${sId}`))}</tr>`;
             
             if(sOpen){
-              // Lvl 4: Vendors
-              const sortedVendors = [...sNode.vendors.keys()].sort((a,b)=>{
-                if(a===MISSING_VENDOR) return 1; if(b===MISSING_VENDOR) return -1;
-                return huSort(a,b);
-              });
+              const sortedVendors = [...sNode.vendors.keys()].sort((a,b)=>(a===MISSING_VENDOR?1:b===MISSING_VENDOR?-1:huSort(a,b)));
               for(const vName of sortedVendors){
                 body += `<tr class="node lvl4">
                   <td class="lbl lbl-lvl4">${esc(vName)}</td>${cellsFor(allTotals.v.get(`${pId}_${mId}_${sId}_${vName}`))}</tr>`;
@@ -416,30 +403,84 @@ function render(){
 
   view.innerHTML = `<table>${thead}${body}</table>`;
   wireTable(view, tree);
-  state._csv = buildCSV(cols, tree, allTotals, sumRow(allTotals.grand));
 }
 
 function esc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
 function wireTable(view, tree){
-  view.querySelectorAll("tr.node[data-node]").forEach(tr => tr.addEventListener("click", ()=>{
+  // Tree logic
+  view.querySelectorAll("tr.node[data-node] td.lbl").forEach(td => td.addEventListener("click", (e)=>{
+    // Only toggle tree if clicking the label, so clicking numbers doesn't collapse rows
+    const tr = td.parentElement;
     const n = tr.dataset.node;
     state.openNodes.has(n) ? state.openNodes.delete(n) : state.openNodes.add(n);
     render();
   }));
+  
   view.querySelectorAll("th.year").forEach(th => th.addEventListener("click", ()=>{
     const y = Number(th.dataset.year);
     state.openYears.has(y) ? state.openYears.delete(y) : state.openYears.add(y);
     render();
   }));
-  view.addEventListener("mouseover", e=>{
-    const c = e.target.closest("[data-c]"); if(!c) return;
-    view.querySelectorAll(".colhl").forEach(el=>el.classList.remove("colhl"));
-    view.querySelectorAll(`td[data-c="${c.dataset.c}"]`).forEach(el=>el.classList.add("colhl"));
+
+  // Excel-style Calculator Drag Selection
+  let isDragging = false;
+  let isCtrl = false;
+
+  view.addEventListener('mousedown', e => {
+    const td = e.target.closest('td[data-val]');
+    if (!td) return;
+    isDragging = true;
+    isCtrl = e.ctrlKey || e.metaKey;
+    
+    if (!isCtrl) {
+      view.querySelectorAll('.cell-selected').forEach(el => el.classList.remove('cell-selected'));
+    }
+    td.classList.toggle('cell-selected');
+    calcSum();
+    e.preventDefault();
   });
-  view.addEventListener("mouseleave", ()=> view.querySelectorAll(".colhl").forEach(el=>el.classList.remove("colhl")));
-  
-  // Attach expand all logic so we have the tree object available
+
+  view.addEventListener('mouseover', e => {
+    // column highlighting
+    const c = e.target.closest("[data-c]");
+    if(c){
+        view.querySelectorAll(".colhl").forEach(el=>el.classList.remove("colhl"));
+        view.querySelectorAll(`td[data-c="${c.dataset.c}"]`).forEach(el=>el.classList.add("colhl"));
+    }
+
+    // Drag selection
+    if (!isDragging) return;
+    const td = e.target.closest('td[data-val]');
+    if (!td) return;
+    if (!td.classList.contains('cell-selected')) {
+      td.classList.add('cell-selected');
+      calcSum();
+    }
+  });
+
+  view.addEventListener("mouseleave", ()=> {
+    view.querySelectorAll(".colhl").forEach(el=>el.classList.remove("colhl"));
+  });
+
+  window.addEventListener('mouseup', () => isDragging = false);
+
+  function calcSum() {
+    let sum = 0, count = 0;
+    view.querySelectorAll('.cell-selected').forEach(td => {
+      sum += parseFloat(td.dataset.val) || 0;
+      count++;
+    });
+    const bar = document.getElementById('statusBar');
+    if (count > 0) {
+      bar.style.display = 'flex';
+      document.getElementById('sumVal').textContent = HUF.format(Math.round(sum)) + " Ft";
+      document.getElementById('sumCount').textContent = count;
+    } else {
+      bar.style.display = 'none';
+    }
+  }
+
   document.getElementById("expandAll").onclick = () => {
     for(const [pId, pNode] of tree){
       state.openNodes.add(`P_${pId}`);
@@ -452,49 +493,14 @@ function wireTable(view, tree){
   };
 }
 
-/* ---------- CSV export ---------- */
-function buildCSV(cols, tree, allTotals, grand){
-  const head = ["Szint 1", "Szint 2", "Szint 3", "Szint 4", ...cols.map(c =>
-    c.type==="m" ? `${c.y}-${String(c.ym%100).padStart(2,"0")}` : c.type==="y" ? `${c.y} össz.` : "Összesen")];
-  
-  const line = (n1,n2,n3,n4,t)=>[n1,n2,n3,n4, ...cols.map(c=>{
-    const v = c.type==="m" ? (t.perYM.get(c.ym)||0) : c.type==="y" ? (t.yT[c.y]||0) : t.g;
-    return Math.round(v);
-  })];
-  
-  const rows=[head];
-  const huSort = (a,b) => String(a).localeCompare(String(b), 'hu', {numeric: true});
-  const sortedProjs = [...tree.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
-  
-  for(const [pId, pNode] of sortedProjs){
-    rows.push(line(pNode.name, "","", "", allTotals.p.get(pId)));
-    const sortedMCats = [...pNode.mCats.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
-    
-    for(const [mId, mNode] of sortedMCats){
-      rows.push(line("", mNode.name, "", "", allTotals.m.get(`${pId}_${mId}`)));
-      const sortedSCats = [...mNode.sCats.entries()].sort((a,b)=>huSort(a[1].name, b[1].name));
-      
-      for(const [sId, sNode] of sortedSCats){
-        rows.push(line("", "", sNode.name, "", allTotals.s.get(`${pId}_${mId}_${sId}`)));
-        const sortedVendors = [...sNode.vendors.keys()].sort((a,b)=>(a===MISSING_VENDOR?1:b===MISSING_VENDOR?-1:huSort(a,b)));
-        
-        for(const vName of sortedVendors){
-          rows.push(line("", "", "", vName, allTotals.v.get(`${pId}_${mId}_${sId}_${vName}`)));
-        }
-      }
-    }
-  }
-  rows.push(line("Nettó cashflow", "","", "", grand));
-  return rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(";")).join("\r\n");
-}
-
-/* ---------- toolbar wiring ---------- */
 function wireToolbar(){
   const sel = document.getElementById("company");
   for(const c of DB.Companies){
     const o=document.createElement("option"); o.value=c.id; o.textContent=c.Company_Name||("#"+c.id);
     sel.appendChild(o);
   }
+  // Initialize to state default
+  sel.value = state.company;
   sel.addEventListener("change", ()=>{ state.company=Number(sel.value); render(); });
 
   const g=document.getElementById("modeGross"), n=document.getElementById("modeNet");
@@ -504,14 +510,6 @@ function wireToolbar(){
   n.addEventListener("click", ()=>setMode(true));
 
   document.getElementById("collapseAll").addEventListener("click", ()=>{ state.openNodes.clear(); render(); });
-
-  document.getElementById("csv").addEventListener("click", ()=>{
-    if(!state._csv) return;
-    const blob = new Blob(["\uFEFF"+state._csv], {type:"text/csv;charset=utf-8"});
-    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="cashflow.csv"; a.click();
-    URL.revokeObjectURL(a.href);
-  });
-
   document.getElementById("refresh").addEventListener("click", refresh);
 }
 
@@ -525,7 +523,7 @@ async function refresh(){
     document.getElementById("view").innerHTML =
       `<div class="state"><div class="big">Nem sikerült betölteni az adatokat</div>
        A widget beállításainál a hozzáférést állítsd <code>Full document access</code>-re,
-       majd kattints a Frissítés gombra.<br><br><code>${esc(err.message||err)}</code></div>`;
+       majd kattints a Frissítés gombra.</div>`;
     stamp.textContent="";
   }
 }
@@ -536,8 +534,7 @@ grist.ready({ requiredAccess: "full" });
   }catch(err){
     document.getElementById("view").innerHTML =
       `<div class="state"><div class="big">Nem sikerült betölteni az adatokat</div>
-       A widget beállításainál a hozzáférést állítsd <code>Full document access</code>-re.<br><br>
-       <code>${esc(err.message||err)}</code></div>`;
+       A widget beállításainál a hozzáférést állítsd <code>Full document access</code>-re.</div>`;
   }})();
 </script>
 </body>
