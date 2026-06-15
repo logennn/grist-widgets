@@ -212,6 +212,12 @@ function aggregate(){
   const catMap = new Map(DB.Categories.map(c => [c.id, c.Name || ("#"+c.id)]));
   const subMap = new Map(DB.SubCategories.map(s => [s.id, {name: s.Name || ("#"+s.id), parent: s.Parent_Category||0}]));
 
+  // Synthetic category for the 10% cash-wage overhead (not a real Grist record)
+  const KP10_CAT = "__KP10_CAT";
+  const KP10_SUB = "__KP10_SUB";
+  catMap.set(KP10_CAT, "KP 10%");
+  subMap.set(KP10_SUB, {name: "KP 10%", parent: KP10_CAT});
+
   const subIdByName = {};
   for(const s of DB.SubCategories) if(PAYROLL_TAX_SUBCATS.includes(s.Name)) subIdByName[s.Name] = s.id;
   const payrollParentId = (DB.Categories.find(c => c.Name === "Közvetlen Munkaerő")||{}).id || -1;
