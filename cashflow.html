@@ -279,6 +279,7 @@ function aggregate(){
 
   for(const r of DB.Expenses){
     if(co && r.Company !== co) continue;
+    if(r.Account === "Céges Bankkártya") continue;
     if(r.Sub_Category && excludedSubIds.has(r.Sub_Category)) continue;
     const ym = ymOf(r.Date); if(!ym) continue;
     // Fix applied: Using Main_Category instead of Category
