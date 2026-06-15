@@ -263,6 +263,11 @@ function aggregate(){
     if(subIdByName["TBJ"])    add(pId, taxParentId, subIdByName["TBJ"],    vendor, ym, -(r.Allocated_TBJ||0));
     if(subIdByName["SZJA"])   add(pId, taxParentId, subIdByName["SZJA"],   vendor, ym, -(r.Allocated_SZJA||0));
     if(subIdByName["SZOCHO"]) add(pId, taxParentId, subIdByName["SZOCHO"], vendor, ym, -(r.Allocated_Szocho||0));
+
+    // 10% overhead on cash-wage portion (mirrors the Wage_Cash*0.1 term in Super_Brutto)
+    const wageCash = (r.Allocated_Wage_Cost||0) - (r.Allocated_Net_Transfer||0);
+    const kp10 = wageCash * 0.1;
+    if(kp10) add(pId, KP10_CAT, KP10_SUB, vendor, ym, -kp10);
   }
 
   for(const r of DB.Bank_Transactions){
